@@ -10,10 +10,11 @@ const App = () => {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
       <Route
         path="/add-song"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredAdmin>
             <AddSong />
           </ProtectedRoute>
         }
@@ -21,7 +22,7 @@ const App = () => {
       <Route
         path="/list-songs"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredAdmin>
             <ListSong />
           </ProtectedRoute>
         }
@@ -29,15 +30,15 @@ const App = () => {
       <Route
         path="/add-album"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredAdmin>
             <AddAlbum />
           </ProtectedRoute>
         }
       />
-      <Route
+      <Route 
         path="/list-album"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredAdmin>
             <ListAlbum />
           </ProtectedRoute>
         }

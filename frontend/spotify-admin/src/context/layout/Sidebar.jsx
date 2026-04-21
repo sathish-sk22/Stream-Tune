@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { menuItems } from '../../assets/assest';
+import { SIDE_MENU_DATA } from '../../assets/assest';
 
 const Sidebar = ({ activeMenu }) => {
   return (
     <aside className="w-full shrink-0 border-b border-gray-200 bg-white lg:min-h-[calc(100vh-81px)] lg:w-80 lg:border-b-0 lg:border-r">
       <nav className="space-y-3 p-6">
-        {menuItems.map((item) => {
+        {SIDE_MENU_DATA.map((item) => {
           const isActive = activeMenu === item.label;
           const Icon = item.icon;
 

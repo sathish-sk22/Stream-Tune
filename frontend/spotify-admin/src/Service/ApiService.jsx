@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  'http://localhost:9090';
+  import.meta.env.VITE_API_BASE_URL
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -48,8 +46,8 @@ export const songsAPI={
     };
     return apiClient.post('/api/songs',formData,config)
   },
-  list:()=>apiClient.get('api/songs'),
-  remove:(id)=>apiClient.delete(`api/songs/${id}`)
+  list:()=>apiClient.get('/api/songs'),
+  remove:(id)=>apiClient.delete(`/api/songs/${id}`)
 }
 
 export const albumsAPI={
@@ -61,8 +59,8 @@ export const albumsAPI={
     };
     return apiClient.post('/api/albums',formData,config)
   },
-  list:()=>apiClient.get('api/albums'),
-  remove:(id)=>apiClient.delete(`api/albums/${id}`)
+  list:()=>apiClient.get('/api/albums'),
+  remove:(id)=>apiClient.delete(`/api/albums/${id}`)
 }
 
 export default apiClient;

@@ -1,8 +1,7 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../Service/ApiService.jsx';
 
 export const AuthContext = createContext();
-const ADMIN_ROLE = 'ROLE_ADMIN';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,38 +13,73 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
+const normalizeRole = (role) => {
+  const normalizedRole = String(role ?? '').trim().toUpperCase();
+
+  if (normalizedRole.startsWith('ROLE_')) {
+    return normalizedRole.slice(5);
+  }
+
+  return normalizedRole;
+};
+
+const parseStoredUser = () => {
   const storedUser = localStorage.getItem('adminUser');
-  const parsedStoredUser = storedUser ? JSON.parse(storedUser) : null;
-  const isStoredAdmin = parsedStoredUser?.role === ADMIN_ROLE;
-  const [user, setUser] = useState(isStoredAdmin ? parsedStoredUser : null);
-  const [token, setToken] = useState(isStoredAdmin ? localStorage.getItem('adminToken') : null);
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    const parsedUser = JSON.parse(storedUser);
+
+    return {
+      ...parsedUser,
+      role: normalizeRole(parsedUser?.role),
+    };
+  } catch (error) {
+    localStorage.removeItem('adminUser');
+    return null;
+  }
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(parseStoredUser);
+  const [token, setToken] = useState(localStorage.getItem('adminToken'));
   const [loading, setLoading] = useState(false);
 
-  if (!isStoredAdmin && (storedUser || localStorage.getItem('adminToken'))) {
+  const clearAuthState = () => {
+    setToken(null);
+    setUser(null);
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-  }
+  };
 
   const login = async (email, password) => {
     setLoading(true);
 
     try {
       const response = await api.post('/api/auth/login', { email, password });
-      const role = response.data.role;
+      const normalizedRole = normalizeRole(response.data.role);
 
-      if (role !== ADMIN_ROLE) {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
+      if (normalizedRole !== 'ADMIN') {
+        clearAuthState();
         return {
           success: false,
-          message: 'Only admin users can log in to the admin panel',
+          message: 'Only admin users can log in to the admin panel.',
         };
       }
 
       const authUser = {
+        name:
+          response.data.name ??
+          response.data.fullName ??
+          response.data.username ??
+          response.data.userName ??
+          response.data.email ??
+          email,
         email: response.data.email ?? email,
-        role,
+        role: normalizedRole,
       };
 
       setToken(response.data.token);
@@ -64,25 +98,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
+  const isAuthenticated = () => {
+    return !!token && !!user;
   };
 
-  const contextValue = useMemo(
-    () => ({
-      user,
-      token,
-      loading,
-      login,
-      logout,
-      isAuthenticated: Boolean(token) && user?.role === ADMIN_ROLE,
-      isAdmin: user?.role === ADMIN_ROLE,
-    }),
-    [user, token, loading]
-  );
+  const isAdmin = () => {
+    return normalizeRole(user?.role) === 'ADMIN';
+  };
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('adminToken');
+    const storedUser = parseStoredUser();
+
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(storedUser);
+    }
+
+    setLoading(false);
+  }, []);
+
+  const logout = () => {
+    clearAuthState();
+  };
+
+  const contextValue = {
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    isAuthenticated,
+    isAdmin,
+  };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };

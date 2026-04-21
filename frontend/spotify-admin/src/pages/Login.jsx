@@ -9,15 +9,23 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, loading, isAuthenticated } = useAuth();
+  const { login, loading, isAuthenticated, isAdmin, logout } = useAuth();
+  const authenticated = isAuthenticated();
+  const adminAuthenticated = authenticated && isAdmin();
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (!loading && adminAuthenticated) {
       navigate('/add-song', { replace: true });
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [adminAuthenticated, loading, navigate]);
 
-  if (isAuthenticated) {
+  useEffect(() => {
+    if (!loading && authenticated && !isAdmin()) {
+      logout();
+    }
+  }, [authenticated, isAdmin, loading, logout]);
+
+  if (adminAuthenticated) {
     return <Navigate replace to="/add-song" />;
   }
 

@@ -1,0 +1,57 @@
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - frontend
+      - admin
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend/spotify
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATA_MONGODB_HOST=mongo
+      - SPRING_DATA_MONGODB_PORT=27017
+      - SPRING_DATA_MONGODB_DATABASE=spotify_clone
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend/spotify-app
+    networks:
+      - app-network
+
+  admin:
+    build: ./frontend/spotify-admin
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
